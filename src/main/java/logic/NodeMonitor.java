@@ -1,21 +1,20 @@
 package logic;
 
-import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooKeeper;
 
-import java.awt.*;
-import java.awt.desktop.OpenFilesEvent;
-import java.awt.desktop.OpenFilesHandler;
-import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class NodeMonitor implements Watcher {
 
     private final String path;
-    Process paint = null;
+
+    private ZooKeeper zooKeeper;
+    private Process paint = null;
 
 
     public NodeMonitor(String path){
@@ -26,11 +25,44 @@ public class NodeMonitor implements Watcher {
     public void process(WatchedEvent event) {
         System.out.println("Event occurs");
         if (event.getPath() != null && event.getPath().equals(path)){
-            System.out.println("Event occurs at good path");
-            if(event.getType().equals(Event.EventType.NodeCreated)){
-                openPaint();
-            }if (event.getType().equals(Event.EventType.NodeDeleted)){
-                closePaint();
+            System.out.println("Event occurs at /z path");
+            switch(event.getType()) {
+                case NodeCreated -> openPaint();
+                case NodeDeleted -> closePaint();
+                case NodeChildrenChanged -> {
+                    showChildrenUpdate();
+                }
+            }
+        }
+    }
+
+    private void showChildrenUpdate() {
+        try {
+            int childrenNumber = zooKeeper.getAllChildrenNumber(path);
+            System.out.printf("Children number of path %s: %d%n",path,childrenNumber);
+        } catch (InterruptedException | KeeperException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printNodeTree(){
+        try {
+            printNodeTreeRec(path);
+        } catch (InterruptedException | KeeperException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void printNodeTreeRec(String node) throws InterruptedException, KeeperException {
+        var queue = new LinkedList<String>();
+        queue.offerLast(node);
+
+        while (!queue.isEmpty()){
+            var peek = queue.removeFirst();
+            System.out.println(peek);
+
+            for (var child: zooKeeper.getChildren(peek,false)){
+                queue.offerFirst(peek + "/" + child);
             }
         }
     }
@@ -55,4 +87,10 @@ public class NodeMonitor implements Watcher {
     public String getPath() {
         return path;
     }
+
+    public void setZooKeeper(ZooKeeper zooKeeper) {
+        this.zooKeeper = zooKeeper;
+    }
+
+
 }

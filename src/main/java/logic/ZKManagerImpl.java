@@ -15,14 +15,16 @@ public class ZKManagerImpl implements ZKManager {
         zkConnection = new ZKConnection();
         zkeeper = zkConnection.connect("localhost");
         zkeeper.addWatch(nodeMonitor.getPath(),nodeMonitor, AddWatchMode.PERSISTENT);
+        nodeMonitor.setZooKeeper(zkeeper);
     }
 
     public void run() throws InterruptedException {
         while (true){
             try {
                 var out = System.in.read();
-                System.out.println("Output" + out);
-                break;
+                if (out == 116){
+                    nodeMonitor.printNodeTree();
+                }
             } catch (IOException e) {
                 System.out.println("ZKManager");
                 break;
