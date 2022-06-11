@@ -11,11 +11,7 @@ public class ZKManagerImpl implements ZKManager {
 
     private final NodeMonitor nodeMonitor = new NodeMonitor("/z");
 
-    public ZKManagerImpl() throws IOException, InterruptedException, KeeperException {
-        initialize();
-    }
-
-    private void initialize() throws IOException, InterruptedException, KeeperException {
+    public void initialize() throws IOException, InterruptedException, KeeperException {
         zkConnection = new ZKConnection();
         zkeeper = zkConnection.connect("localhost");
         zkeeper.addWatch(nodeMonitor.getPath(),nodeMonitor, AddWatchMode.PERSISTENT);
@@ -32,7 +28,6 @@ public class ZKManagerImpl implements ZKManager {
                 break;
             }
         }
-        closeConnection();
     }
 
     public void closeConnection() throws InterruptedException {
